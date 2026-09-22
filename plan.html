@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Training Log</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#111111; --sub:#777777; --line:#dddddd;
+    --accent:#111111;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#111111; --ink:#f0f0f0; --sub:#999999; --line:#333333; --accent:#f0f0f0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#111111; --ink:#f0f0f0; --sub:#999999; --line:#333333; --accent:#f0f0f0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:1.5rem 1.2rem calc(3rem + env(safe-area-inset-bottom,0px));
+    padding-top:calc(1.5rem + env(safe-area-inset-top,0px));
+  }
+  .wrap{max-width:640px; margin:0 auto;}
+  h1{ font-size:1.5rem; font-weight:600; margin:0 0 0.2rem; outline:none; }
+  .sub{color:var(--sub); font-size:0.9rem; margin:0 0 1rem;}
+  .toolbar{display:flex; gap:0.5rem; margin-bottom:1.5rem;}
+  button{
+    font-size:0.82rem; border:1px solid var(--line); background:none; color:var(--ink);
+    padding:0.4rem 0.75rem; border-radius:6px; cursor:pointer;
+  }
+  button:hover{border-color:var(--accent);}
+  h2.section{
+    font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em;
+    color:var(--sub); margin:1.8rem 0 0.6rem; font-weight:600;
+  }
+  .day{border-top:1px solid var(--line);}
+  .day:last-child{border-bottom:1px solid var(--line);}
+  .day-head{ display:flex; justify-content:space-between; align-items:baseline; padding:0.75rem 0; cursor:pointer; }
+  .day-head .name{font-weight:600; font-size:0.98rem; outline:none;}
+  .day-head .tag{font-size:0.82rem; color:var(--sub); outline:none;}
+  .day-body{display:none; padding-bottom:0.8rem;}
+  .day.open .day-body{display:block;}
+  .move{
+    display:grid; grid-template-columns:1fr auto auto 20px; gap:0.5rem;
+    align-items:center; padding:0.35rem 0; font-size:0.9rem;
+  }
+  .move span[contenteditable]{outline:none;}
+  .move span[contenteditable]:focus{background:var(--line);}
+  .t{color:var(--sub); font-size:0.85rem; white-space:nowrap; min-width:60px; text-align:right;}
+  .rm{border:none; background:none; color:var(--sub); cursor:pointer; padding:0; font-size:0.9rem;}
+  .rm:hover{color:var(--ink);}
+  .add-row, .add-day{
+    background:none; border:none; color:var(--sub); font-size:0.85rem;
+    padding:0.4rem 0; cursor:pointer; text-align:left; width:100%;
+  }
+  .add-row:hover, .add-day:hover{color:var(--ink);}
+  .labels{
+    display:grid; grid-template-columns:1fr auto auto 20px; gap:0.5rem;
+    font-size:0.72rem; color:var(--sub); padding-top:0.3rem;
+  }
+  .labels .t{text-align:right;}
+  .note{
+    font-size:0.85rem; color:var(--sub); margin-top:1.8rem;
+    padding-top:1rem; border-top:1px solid var(--line); outline:none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="pageTitle" contenteditable="true">Training Log</h1>
+  <p class="sub">Tap a day to expand. Tap any text to edit.</p>
+  <div class="toolbar">
+    <button id="themeBtn">Theme</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <h2 class="section">Weekly Plan</h2>
+  <div class="labels"><span></span><span class="t">Tier 1</span><span class="t">Tier 2</span><span></span></div>
+  <div id="days"></div>
+  <button class="add-day" id="addDayBtn">+ Add day</button>
+
+  <h2 class="section">Daily Mobility</h2>
+  <div class="day open" id="stretchDay">
+    <div class="day-head" data-toggle>
+      <span class="name">Mobility Routine</span>
+      <span class="tag">daily, ~10 min</span>
+    </div>
+    <div class="day-body" id="stretchMoves"></div>
+  </div>
+  <button class="add-row" id="addStretchBtn">+ Add stretch</button>
+
+  <div class="note" contenteditable="true" id="noteBox"></div>
+</div>
+
+<script>
+const DEFAULT_DATA = {
+  title: "Training Log",
+  note: "Move up to Tier 2 once Tier 1 stops feeling hard for two sessions in a row.",
+  days: [
+    { name:"Monday — Push", tag:"chest / shoulders / triceps", open:true, moves:[
+      {n:"Knee push-ups", t1:"3×10", t2:"—"},
+      {n:"Full push-ups", t1:"—", t2:"4×15"},
+      {n:"Pike push-ups", t1:"3×8", t2:"4×12"},
+      {n:"Diamond push-ups", t1:"—", t2:"4×10"},
+      {n:"Plank", t1:"3×20s", t2:"4×45s"},
+    ]},
+    { name:"Tuesday — Legs", tag:"quads / glutes / hamstrings", open:false, moves:[
+      {n:"Bodyweight squats", t1:"3×15", t2:"—"},
+      {n:"Jump squats", t1:"—", t2:"4×15"},
+      {n:"Reverse lunges", t1:"3×10/leg", t2:"—"},
+      {n:"Bulgarian split squat", t1:"—", t2:"4×12/leg"},
+      {n:"Glute bridges", t1:"3×15", t2:"—"},
+      {n:"Single-leg glute bridge", t1:"—", t2:"4×12/leg"},
+    ]},
+    { name:"Wednesday — Back & Posture", tag:"upper back / erectors", open:false, moves:[
+      {n:"Supermans", t1:"3×10", t2:"4×12, 3s hold"},
+      {n:"Reverse snow angels", t1:"3×12", t2:"4×15"},
+      {n:"Prone Y-T-W raises", t1:"3×8 ea", t2:"4×10 ea, 2s hold"},
+      {n:"Prone swimmers", t1:"—", t2:"4×20s"},
+    ]},
+    { name:"Thursday — Rest", tag:"mobility only", open:false, moves:[] },
+    { name:"Friday — Push + Legs", tag:"full body", open:false, moves:[
+      {n:"Push-ups", t1:"3×10", t2:"4×15"},
+      {n:"Squats", t1:"3×15", t2:"4×15 jump"},
+      {n:"Diamond push-ups", t1:"—", t2:"4×10"},
+      {n:"Plank", t1:"3×20s", t2:"4×45s"},
+    ]},
+    { name:"Saturday — Back & Core", tag:"posterior chain / abs", open:false, moves:[
+      {n:"Supermans", t1:"3×10", t2:"4×12"},
+      {n:"Leg raises", t1:"3×10", t2:"4×15, 3s down"},
+      {n:"Reverse snow angels", t1:"3×12", t2:"4×15"},
+      {n:"Hollow body hold", t1:"—", t2:"4×20s"},
+    ]},
+    { name:"Sunday — Rest", tag:"full rest", open:false, moves:[] },
+  ],
+  stretch: [
+    {n:"Cat-cow", t1:"×10"},
+    {n:"Child's pose", t1:"30–60s"},
+    {n:"Cobra stretch", t1:"30s ×3"},
+    {n:"Kneeling hip flexor stretch", t1:"30s ea"},
+    {n:"Supine spinal twist", t1:"30s ea"},
+    {n:"Chest opener stretch", t1:"30s"},
+  ]
+};
+
+let data = null;
+const KEY = "training-log-v1";
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    data = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }catch(e){ data = JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+function esc(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function render(){
+  document.getElementById('pageTitle').textContent = data.title;
+  document.getElementById('noteBox').textContent = data.note;
+
+  const daysEl = document.getElementById('days');
+  daysEl.innerHTML = '';
+  data.days.forEach((day, di) => {
+    const el = document.createElement('div');
+    el.className = 'day' + (day.open ? ' open' : '');
+    el.innerHTML = `
+      <div class="day-head" data-toggle>
+        <span class="name" contenteditable="true" data-di="${di}" data-field="name">${esc(day.name)}</span>
+        <span class="tag" contenteditable="true" data-di="${di}" data-field="tag">${esc(day.tag)}</span>
+      </div>
+      <div class="day-body"></div>
+      <button class="add-row" data-add-move="${di}">+ Add exercise</button>
+    `;
+    const body = el.querySelector('.day-body');
+    day.moves.forEach((mv, mi) => {
+      const row = document.createElement('div');
+      row.className = 'move';
+      row.innerHTML = `
+        <span contenteditable="true" data-di="${di}" data-mi="${mi}" data-field="n">${esc(mv.n)}</span>
+        <span class="t" contenteditable="true" data-di="${di}" data-mi="${mi}" data-field="t1">${esc(mv.t1)}</span>
+        <span class="t" contenteditable="true" data-di="${di}" data-mi="${mi}" data-field="t2">${esc(mv.t2)}</span>
+      `;
+      const rm = document.createElement('button');
+      rm.className = 'rm'; rm.textContent = '✕';
+      rm.addEventListener('click', () => { day.moves.splice(mi,1); save(); render(); });
+      row.appendChild(rm);
+      body.appendChild(row);
+    });
+    daysEl.appendChild(el);
+  });
+
+  const stretchEl = document.getElementById('stretchMoves');
+  stretchEl.innerHTML = '';
+  data.stretch.forEach((mv, mi) => {
+    const row = document.createElement('div');
+    row.className = 'move';
+    row.innerHTML = `
+      <span contenteditable="true" data-si="${mi}" data-field="n">${esc(mv.n)}</span>
+      <span class="t" contenteditable="true" data-si="${mi}" data-field="t1">${esc(mv.t1)}</span>
+      <span class="t"></span>
+    `;
+    const rm = document.createElement('button');
+    rm.className = 'rm'; rm.textContent = '✕';
+    rm.addEventListener('click', () => { data.stretch.splice(mi,1); save(); render(); });
+    row.appendChild(rm);
+    stretchEl.appendChild(row);
+  });
+
+  attach();
+}
+
+function attach(){
+  document.querySelectorAll('[data-toggle]').forEach(h => {
+    h.onclick = () => h.closest('.day').classList.toggle('open');
+  });
+  document.querySelectorAll('[data-di]').forEach(el => {
+    el.onblur = () => {
+      const di = +el.dataset.di, field = el.dataset.field;
+      if(el.dataset.mi !== undefined){
+        data.days[di].moves[+el.dataset.mi][field] = el.textContent.trim();
+      } else {
+        data.days[di][field] = el.textContent.trim();
+      }
+      save();
+    };
+  });
+  document.querySelectorAll('[data-si]').forEach(el => {
+    el.onblur = () => {
+      const si = +el.dataset.si, field = el.dataset.field;
+      data.stretch[si][field] = el.textContent.trim();
+      save();
+    };
+  });
+  document.querySelectorAll('[data-add-move]').forEach(btn => {
+    btn.onclick = () => {
+      const di = +btn.dataset.addMove;
+      data.days[di].moves.push({n:"New exercise", t1:"3×10", t2:"4×12"});
+      save(); render();
+    };
+  });
+  document.getElementById('addStretchBtn').onclick = () => {
+    data.stretch.push({n:"New stretch", t1:"30s"});
+    save(); render();
+  };
+  document.getElementById('addDayBtn').onclick = () => {
+    data.days.push({name:"New Day", tag:"", open:true, moves:[]});
+    save(); render();
+  };
+}
+
+document.getElementById('pageTitle').onblur = () => { data.title = document.getElementById('pageTitle').textContent.trim(); save(); };
+document.getElementById('noteBox').onblur = () => { data.note = document.getElementById('noteBox').textContent.trim(); save(); };
+document.getElementById('resetBtn').onclick = () => {
+  if(confirm('Reset to default?')){ data = JSON.parse(JSON.stringify(DEFAULT_DATA)); save(); render(); }
+};
+document.getElementById('themeBtn').onclick = () => {
+  const root = document.documentElement;
+  const cur = root.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if(!cur){ root.setAttribute('data-theme', prefersDark ? 'light' : 'dark'); }
+  else if(cur === 'dark'){ root.setAttribute('data-theme','light'); }
+  else{ root.removeAttribute('data-theme'); }
+};
+
+load();
+render();
+</script>
+</body>
+</html>
