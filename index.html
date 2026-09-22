@@ -99,7 +99,7 @@
 <script>
 const DEFAULT_DATA = {
   title: "Training Log",
-  note: "Move up to Tier 2 once Tier 1 stops feeling hard for two sessions in a row.",
+  note: "Move up to Tier 2 once Tier 1 stops feeling hard for two sessions in a row. Every muscle group is covered except back/lat pulling strength (lats need an overhead or horizontal anchor point, which isn't available here).",
   days: [
     { name:"Monday — Push", tag:"chest / shoulders / triceps", open:true, moves:[
       {n:"Knee push-ups", t1:"3×10", t2:"—"},
@@ -136,6 +136,12 @@ const DEFAULT_DATA = {
       {n:"Hollow body hold", t1:"—", t2:"4×20s"},
     ]},
     { name:"Sunday — Rest", tag:"full rest", open:false, moves:[] },
+    { name:"Extras — Grip, Arms, Core", tag:"add to any day, or standalone", open:false, moves:[
+      {n:"Grip trainer squeezes", t1:"3×15 ea hand", t2:"4×20 ea hand"},
+      {n:"Towel bicep curls (stand on towel, curl ends)", t1:"3×10", t2:"4×15"},
+      {n:"Standing calf raises", t1:"3×15", t2:"4×25"},
+      {n:"Side plank", t1:"3×20s ea side", t2:"4×40s ea side"},
+    ]},
   ],
   stretch: [
     {n:"Cat-cow", t1:"×10"},
